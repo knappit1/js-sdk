@@ -50,6 +50,9 @@ const PostalCodeExtension = {
         };
 
         ExtendableObject._postalCodeAutocompleteTimeout = null;
+
+        ExtendableObject._directionUp = 'up';
+        ExtendableObject._directionDown = 'down';
     },
 
     /**
@@ -257,7 +260,7 @@ const PostalCodeExtension = {
                     e.stopPropagation();
                     if (ExtendableObject._postalCodePredictionsIndex > PREDICTIONS_INDEX_DEFAULT) {
                         ExtendableObject._postalCodePredictionsIndex = ExtendableObject._postalCodePredictionsIndex - 1;
-                        ExtendableObject.util.renderPostalCodePredictionsDropdown();
+                        ExtendableObject.util.renderPostalCodePredictionsDropdown(ExtendableObject._directionUp);
                     }
                     // Arrow up at no selection does nothing (stays at -1)
                 } else if (e.key === 'ArrowDown' || e.key === 'Down') {
@@ -268,7 +271,7 @@ const PostalCodeExtension = {
                     } else {
                         ExtendableObject._postalCodePredictionsIndex = 0;
                     }
-                    ExtendableObject.util.renderPostalCodePredictionsDropdown();
+                    ExtendableObject.util.renderPostalCodePredictionsDropdown(ExtendableObject._directionDown);
                 } else if (e.key === 'Home') {
                     e.preventDefault();
                     e.stopPropagation();
@@ -280,9 +283,9 @@ const PostalCodeExtension = {
                     ExtendableObject._postalCodePredictionsIndex = ExtendableObject._postalCodePredictions.length - 1;
                     ExtendableObject.util.renderPostalCodePredictionsDropdown();
                 } else if (e.key === 'Escape') {
-                    if(ExtendableObject._postalCodePredictions.length) {
+                    if (ExtendableObject._postalCodePredictions.length) {
                         e.preventDefault();
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                     }
                     ExtendableObject.resetPostalCodePredictions();
                     ExtendableObject.util.removePostalCodePredictionsDropdown();
@@ -450,9 +453,46 @@ const PostalCodeExtension = {
          * Renders the predictions dropdown with diff highlighting
          * Handles dropdown positioning, diff highlighting, and event listeners
          */
-        ExtendableObject.util.renderPostalCodePredictionsDropdown = () => {
+        ExtendableObject.util.renderPostalCodePredictionsDropdown = (scrollDirection = null) => {
             const originalPostalCode = ExtendableObject.getPostalCode();
             const predictions = ExtendableObject.getPostalCodePredictions();
+
+            // Save predictions container scroll state
+            ExtendableObject.scrollState = null;
+            if (
+                scrollDirection === ExtendableObject._directionUp ||
+                scrollDirection === ExtendableObject._directionDown
+            ) {
+                const currentActiveItem = document.querySelector(
+                    '[endereco-postal-code-predictions] .endereco-predictions__item.active'
+                );
+
+                if (currentActiveItem) {
+                    const container = currentActiveItem.closest('.endereco-predictions');
+
+                    const itemTop = currentActiveItem.offsetTop;
+                    const itemBottom = itemTop + currentActiveItem.offsetHeight;
+
+                    const viewTop = container.scrollTop;
+                    const viewBottom = viewTop + container.clientHeight;
+
+                    const isVisible = itemBottom > viewTop && itemTop < viewBottom;
+
+                    if (isVisible) {
+                        // keep relative position
+                        ExtendableObject.scrollState = {
+                            mode: 'keep',
+                            scrollTop: container.scrollTop
+                        };
+                    } else {
+                        // Active item is outside viewport → force positioning
+                        ExtendableObject.scrollState = {
+                            mode: 'force',
+                            direction: scrollDirection
+                        };
+                    }
+                }
+            }
 
             // Is subdivision visible?
             let isSubdivisionVisible = false;
@@ -551,8 +591,56 @@ const PostalCodeExtension = {
                     setTimeout(() => {
                         const activeItem = document.querySelector('[endereco-postal-code-predictions] .endereco-predictions__item.active');
 
-                        if (activeItem) {
+                        if (ExtendableObject._postalCodePredictionsIndex === 0) {
                             activeItem.scrollIntoView({ block: 'nearest' });
+
+                            return;
+                        }
+
+                        if (
+                            activeItem &&
+                            ExtendableObject.scrollState &&
+                            (scrollDirection === ExtendableObject._directionUp ||
+                             scrollDirection === ExtendableObject._directionDown)
+                        ) {
+                            const container = activeItem.closest('.endereco-predictions');
+
+                            if (ExtendableObject.scrollState.mode === 'keep') {
+                                // Restore previous scroll position
+                                container.scrollTop = ExtendableObject.scrollState.scrollTop;
+
+                                const itemTop = activeItem.offsetTop;
+                                const itemBottom = itemTop + activeItem.offsetHeight;
+
+                                const viewTop = container.scrollTop;
+                                const viewBottom = viewTop + container.clientHeight;
+
+                                if (scrollDirection === ExtendableObject._directionUp && itemTop < viewTop) {
+                                    container.scrollTop = itemTop;
+                                }
+
+                                if (scrollDirection === ExtendableObject._directionDown && itemBottom > viewBottom) {
+                                    container.scrollTop = itemBottom - container.clientHeight;
+                                }
+                            }
+
+                            if (ExtendableObject.scrollState.mode === 'force') {
+                                // Force active item into viewport
+                                if (ExtendableObject.scrollState.direction === ExtendableObject._directionDown) {
+                                    container.scrollTop = activeItem.offsetTop;
+                                }
+
+                                if (ExtendableObject.scrollState.direction === ExtendableObject._directionUp) {
+                                    container.scrollTop =
+                                        activeItem.offsetTop -
+                                        container.clientHeight +
+                                        activeItem.offsetHeight;
+                                }
+                            }
+                        } else {
+                            if (activeItem) {
+                                activeItem.scrollIntoView({ block: 'nearest' });
+                            }
                         }
                     }, 0);
 

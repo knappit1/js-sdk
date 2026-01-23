@@ -47,6 +47,9 @@ const LocalityExtension = {
         ExtendableObject._localityAutocompleteTimeout = null;
 
         ExtendableObject._subscribers.localityChunk = [];
+
+        ExtendableObject._directionUp = 'up';
+        ExtendableObject._directionDown = 'down';
     },
 
     /**
@@ -254,7 +257,7 @@ const LocalityExtension = {
                     e.stopPropagation();
                     if (ExtendableObject._localityPredictionsIndex > PREDICTIONS_INDEX_DEFAULT) {
                         ExtendableObject._localityPredictionsIndex = ExtendableObject._localityPredictionsIndex - 1;
-                        ExtendableObject.util.renderLocalityPredictionsDropdown();
+                        ExtendableObject.util.renderLocalityPredictionsDropdown(ExtendableObject._directionUp);
                     }
                     // Arrow up at no selection does nothing (stays at -1)
                 } else if (e.key === 'ArrowDown' || e.key === 'Down') {
@@ -265,7 +268,7 @@ const LocalityExtension = {
                     } else {
                         ExtendableObject._localityPredictionsIndex = 0;
                     }
-                    ExtendableObject.util.renderLocalityPredictionsDropdown();
+                    ExtendableObject.util.renderLocalityPredictionsDropdown(ExtendableObject._directionDown);
                 } else if (e.key === 'Home') {
                     e.preventDefault();
                     e.stopPropagation();
@@ -277,9 +280,9 @@ const LocalityExtension = {
                     ExtendableObject._localityPredictionsIndex = ExtendableObject._localityPredictions.length - 1;
                     ExtendableObject.util.renderLocalityPredictionsDropdown();
                 } else if (e.key === 'Escape') {
-                    if(ExtendableObject._localityPredictions.length) {
+                    if (ExtendableObject._localityPredictions.length) {
                         e.preventDefault();
-                        e.stopPropagation(); 
+                        e.stopPropagation();
                     }
                     ExtendableObject.resetLocalityPredictions();
                     ExtendableObject.util.removeLocalityPredictionsDropdown();
@@ -442,10 +445,47 @@ const LocalityExtension = {
          * Renders the predictions dropdown with diff highlighting
          * Handles dropdown positioning, diff highlighting, and event listeners
          */
-        ExtendableObject.util.renderLocalityPredictionsDropdown = () => {
+        ExtendableObject.util.renderLocalityPredictionsDropdown = (scrollDirection = null) => {
             // TODO: this has to be moved to parameters, as well as keydown callbacks.
             const originalLocality = ExtendableObject.getLocality();
             const predictions = ExtendableObject.getLocalityPredictions();
+
+            // Save predictions container scroll state
+            ExtendableObject.scrollState = null;
+            if (
+                scrollDirection === ExtendableObject._directionUp ||
+                scrollDirection === ExtendableObject._directionDown
+            ) {
+                const currentActiveItem = document.querySelector(
+                    '[endereco-locality-predictions] .endereco-predictions__item.active'
+                );
+
+                if (currentActiveItem) {
+                    const container = currentActiveItem.closest('.endereco-predictions');
+
+                    const itemTop = currentActiveItem.offsetTop;
+                    const itemBottom = itemTop + currentActiveItem.offsetHeight;
+
+                    const viewTop = container.scrollTop;
+                    const viewBottom = viewTop + container.clientHeight;
+
+                    const isVisible = itemBottom > viewTop && itemTop < viewBottom;
+
+                    if (isVisible) {
+                        // keep relative position
+                        ExtendableObject.scrollState = {
+                            mode: 'keep',
+                            scrollTop: container.scrollTop
+                        };
+                    } else {
+                        // Active item is outside viewport → force positioning
+                        ExtendableObject.scrollState = {
+                            mode: 'force',
+                            direction: scrollDirection
+                        };
+                    }
+                }
+            }
 
             // Is subdivision visible?
             let isSubdivisionVisible = false;
@@ -543,8 +583,56 @@ const LocalityExtension = {
                     setTimeout(() => {
                         const activeItem = document.querySelector('[endereco-locality-predictions] .endereco-predictions__item.active');
 
-                        if (activeItem) {
+                        if (ExtendableObject._localityPredictionsIndex === 0) {
                             activeItem.scrollIntoView({ block: 'nearest' });
+
+                            return;
+                        }
+
+                        if (
+                            activeItem &&
+                            ExtendableObject.scrollState &&
+                            (scrollDirection === ExtendableObject._directionUp ||
+                             scrollDirection === ExtendableObject._directionDown)
+                        ) {
+                            const container = activeItem.closest('.endereco-predictions');
+
+                            if (ExtendableObject.scrollState.mode === 'keep') {
+                                // Restore previous scroll position
+                                container.scrollTop = ExtendableObject.scrollState.scrollTop;
+
+                                const itemTop = activeItem.offsetTop;
+                                const itemBottom = itemTop + activeItem.offsetHeight;
+
+                                const viewTop = container.scrollTop;
+                                const viewBottom = viewTop + container.clientHeight;
+
+                                if (scrollDirection === ExtendableObject._directionUp && itemTop < viewTop) {
+                                    container.scrollTop = itemTop;
+                                }
+
+                                if (scrollDirection === ExtendableObject._directionDown && itemBottom > viewBottom) {
+                                    container.scrollTop = itemBottom - container.clientHeight;
+                                }
+                            }
+
+                            if (ExtendableObject.scrollState.mode === 'force') {
+                                // Force active item into viewport
+                                if (ExtendableObject.scrollState.direction === ExtendableObject._directionDown) {
+                                    container.scrollTop = activeItem.offsetTop;
+                                }
+
+                                if (ExtendableObject.scrollState.direction === ExtendableObject._directionUp) {
+                                    container.scrollTop =
+                                        activeItem.offsetTop -
+                                        container.clientHeight +
+                                        activeItem.offsetHeight;
+                                }
+                            }
+                        } else {
+                            if (activeItem) {
+                                activeItem.scrollIntoView({ block: 'nearest' });
+                            }
                         }
                     }, 0);
 
