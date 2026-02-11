@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<style>
+		.form-container {
+			width: 500px;
+			margin: 100px auto;
+			padding: 16px;
+			border-color: #e8e8e8;
+			background-color: #f3f3f3;
+			box-sizing: border-box;
+		}
+
+		.row {
+			display: flex;
+			margin: 8px 0;
+			justify-content: space-between;
+		}
+
+		.is--insivisble {
+			display: none !important;
+		}
+
+        .form-container .label {
+			display: inline-block;
+			font-size: 0.75em;
+			width: 100%;
+			cursor: pointer;
+		}
+
+        .form-container select,
+		.form-container input {
+			width: 100%;
+            box-sizing: border-box;
+		}
+
+		.form-container input[type=checkbox] {
+			width: auto;
+			box-sizing: border-box;
+		}
+
+		.row > div:first-child {
+			margin-right: 20px;
+		}
+
+		.is--hidden {
+			display: none !important;
+		}
+
+		.btn.btn-primary {
+			background-color: #0069ff;
+			border: 0;
+			border-radius: 3px;
+			color: #fff;
+			display: inline-block;
+			font-size: 16px;
+			font-weight: 400;
+			padding: 6px 18px;
+			text-align: center;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.btn.btn-secondary {
+			background-color: #999999;
+			border: 0;
+			border-radius: 3px;
+			color: #fff;
+			display: inline-block;
+			font-size: 16px;
+			font-weight: 400;
+			padding: 6px 18px;
+			text-align: center;
+			text-decoration: none;
+			cursor: pointer;
+		}
+	</style>
+
+	<script>
+		// Konfiguration und spezifische Anpassungen.
+		if (undefined === window.EnderecoIntegrator) {
+			window.EnderecoIntegrator = {};
+		}
+		if (!window.EnderecoIntegrator.onLoad) {
+			window.EnderecoIntegrator.onLoad = [];
+		}
+
+		// Hilfsfunktion. Damit lässt sich initAMS aufrufen, auch wenn die funktion noch nicht initiert ist.
+		// Bessere Art und Weise wäre ein Proxy Objekt.
+		async function enderecoInitAMS(selectors, config) {
+			if (window.EnderecoIntegrator.ready) {
+				window.EnderecoIntegrator.initAMS(selectors, config);
+			} else {
+				window.EnderecoIntegrator.onLoad.push(async () => {
+					window.EnderecoIntegrator.initAMS(selectors, config);
+				});
+			}
+		}
+
+		function enderecoInitPhoneServices(prefix, config) {
+			if (undefined !== window.EnderecoIntegrator.initPhoneServices) {
+				window.EnderecoIntegrator.initPhoneServices(prefix, config);
+			} else {
+				window.EnderecoIntegrator.onLoad.push(function () {
+					window.EnderecoIntegrator.initPhoneServices(prefix, config);
+				});
+			}
+		}
+
+		function enderecoInitPersonServices(prefix, config) {
+			if (undefined !== window.EnderecoIntegrator.initPersonServices) {
+				window.EnderecoIntegrator.initPersonServices(prefix, config);
+			} else {
+				window.EnderecoIntegrator.onLoad.push(function () {
+					window.EnderecoIntegrator.initPersonServices(prefix, config);
+				});
+			}
+		}
+
+		function enderecoInitEmailServices(prefix, config) {
+			if (undefined !== window.EnderecoIntegrator.initEmailServices) {
+				window.EnderecoIntegrator.initEmailServices(prefix, config);
+			} else {
+				window.EnderecoIntegrator.onLoad.push(function () {
+					window.EnderecoIntegrator.initEmailServices(prefix, config);
+				});
+			}
+		}
+
+		function enderecoLoadAMSConfig() {
+			window.EnderecoIntegrator.defaultCountry = 'DE';
+			window.EnderecoIntegrator.themeName = 'my-theme';
+			window.EnderecoIntegrator.defaultCountrySelect = true; // Feature "Preselect country"
+			window.EnderecoIntegrator.config.apiUrl = 'http://localhost:8888/proxyfile';
+			window.EnderecoIntegrator.config.apiKey = sessionStorage.getItem('apiKey') ?? ''; // Hier kommt Dein API Key.
+			window.EnderecoIntegrator.config.showDebugInfo = false;
+			window.EnderecoIntegrator.config.remoteApiUrl = localStorage.getItem('remoteApiUrl') || 'endereco-service.de';
+			window.EnderecoIntegrator.config.trigger.onblur = false; // Has to be false for proper testing
+			window.EnderecoIntegrator.config.trigger.onsubmit = true;
+			window.EnderecoIntegrator.config.ux.smartFill = true;
+			window.EnderecoIntegrator.config.ux.checkExisting = true;
+			window.EnderecoIntegrator.config.ux.resumeSubmit = true;
+			window.EnderecoIntegrator.config.ux.useStandardCss = true;
+			window.EnderecoIntegrator.config.ux.cssFilePath = '/assets/endereco.min.css';
+			window.EnderecoIntegrator.config.ux.showEmailStatus = true;
+			window.EnderecoIntegrator.config.ux.allowCloseModal = true;
+			window.EnderecoIntegrator.config.ux.confirmWithCheckbox = true;
+			window.EnderecoIntegrator.config.ux.changeFieldsOrder = true;
+			window.EnderecoIntegrator.config.ux.showPhoneErrors = true;
+			window.EnderecoIntegrator.config.phoneFormat = "E164";
+			window.EnderecoIntegrator.config.ux.showPhoneFlag = true;
+			window.EnderecoIntegrator.countryMappingUrl = '';
+			window.EnderecoIntegrator.config.useAutocomplete = true;
+			window.EnderecoIntegrator.config.templates.primaryButtonClasses = 'btn btn-primary btn-lg';
+			window.EnderecoIntegrator.config.templates.secondaryButtonClasses = 'btn btn-secondary btn-lg';
+			window.EnderecoIntegrator.config.texts = {
+				popUpHeadline: 'Adresse prüfen',
+				popUpSubline: 'Die von Ihnen eingegebene Adresse scheint nicht korrekt oder unvollständig zu sein. Bitte wählen Sie die korrekte Adresse aus.',
+				mistakeNoPredictionSubline: 'Ihre Adresse konnte nicht verifiziert werden. Bitte prüfen Sie Ihre Eingabe und ändern oder bestätigen sie.',
+				notFoundSubline: 'Ihre Adresse konnte nicht verifiziert werden. Bitte prüfen Sie Ihre Eingabe und ändern oder bestätigen sie.',
+				confirmMyAddressCheckbox: 'Ich bestätige, dass meine Adresse korrekt und zustellbar ist.',
+				yourInput: 'Ihre Eingabe:',
+				editYourInput: '(bearbeiten)',
+				ourSuggestions: 'Unsere Vorschläge:',
+				useSelected: 'Auswahl übernehmen',
+				confirmAddress: 'Adresse bestätigen',
+				editAddress: 'Adresse bearbeiten',
+				warningText: 'Falsche Adressen können zu Problemen in der Zustellung führen und weitere Kosten verursachen.',
+				popupHeadlines: {
+					general_address: 'Adresse prüfen',
+					billing_address: 'Rechnungsadresse prüfen',
+					shipping_address: 'Lieferadresse prüfen',
+				},
+				errorMessages: {
+					address_has_missing_building_number_content: 'Die Hausnummer fehlt in der Eingabe.',
+					address_has_unresolvable_building_number_content: 'Mit der eingegebenen Hausnummer konnte die Adresse nicht verifiziert werden.',
+					packstation_has_unresolvable_address: 'Die Packstation-Adresse konnte nicht gefunden werden.',
+					postoffice_has_unresolvable_address: 'Die Postfilialen-Adresse konnte nicht gefunden werden.',
+					packstation_has_unresolvable_postnummer: 'Die Postnummer ist ungültig.'
+				},
+				statuses: {
+					email_not_correct: 'Die E-Mail Adresse scheint nicht korrekt zu sein.',
+					email_cant_receive: 'Das E-Mail Postfach ist nicht erreichbar.',
+					email_syntax_error: 'Prüfen Sie die Schreibweise.',
+					email_no_mx: 'Die E-Mail Adresse existiert nicht. Prüfen Sie die Schreibweise.',
+					building_number_is_missing: 'Keine Hausnummer enthalten.',
+					building_number_not_found: 'Diese Hausnummer wurde nicht gefunden.',
+					street_name_needs_correction: 'Die Schreibweise der Straße ist fehlerhaft.',
+					locality_needs_correction: 'Die Schreibweise des Ortes ist fehlerhaft.',
+					postal_code_needs_correction: 'Die PLZ ist ungültig.',
+					country_code_needs_correction: 'Die eingegebene Adresse wurde in einem anderen Land gefunden.',
+					phone_invalid: "Die Rufnummer existiert nicht oder ist nicht erreichbar.",
+					phone_format_needs_correction: "Die Rufnummer ist falsch geschrieben.",
+					phone_should_be_fixed: "Es wird eine Festnetznummer erwartet",
+					phone_should_be_mobile: "Es wird eine Mobilfunknummer erwartet"
+				},
+				"requiredFormat": {
+					"E164": "Format E.164 wird erwartet",
+					"INTERNATIONAL": "Internationaler format wird erwartet",
+					"NATIONAL": "Nationaler Format wird erwartet",
+				}
+			};
+			window.EnderecoIntegrator.activeServices = {
+				ams: true,
+				emailService: false,
+				personService: false,
+				phs: false
+			}
+			window.EnderecoIntegrator.countryMapping = {
+				'1': 'DE',
+				'2': 'FR',
+				'3': 'US'
+			};
+			window.EnderecoIntegrator.countryReverseMapping = {
+				'DE': 1,
+				'FR': 2,
+				'US': 3
+			};
+
+			window.EnderecoIntegrator.subdivisionMapping = {
+				// Germany (DE)
+				'DE-BW': 'DE-BW', 'DE-BY': 'DE-BY', 'DE-BE': 'DE-BE', 'DE-BB': 'DE-BB',
+				'DE-HB': 'DE-HB', 'DE-HH': 'DE-HH', 'DE-HE': 'DE-HE', 'DE-MV': 'DE-MV',
+				'DE-NI': 'DE-NI', 'DE-NW': 'DE-NW', 'DE-RP': 'DE-RP', 'DE-SL': 'DE-SL',
+				'DE-SN': 'DE-SN', 'DE-ST': 'DE-ST', 'DE-SH': 'DE-SH', 'DE-TH': 'DE-TH',
+
+				// France (FR) - Add all codes from your HTML select list here
+				'FR-ARA': 'FR-ARA', 'FR-01': 'FR-01', 'FR-03': 'FR-03', 'FR-07': 'FR-07',
+				'FR-15': 'FR-15', 'FR-26': 'FR-26', 'FR-38': 'FR-38', 'FR-42': 'FR-42',
+				'FR-43': 'FR-43', 'FR-63': 'FR-63', 'FR-69': 'FR-69', 'FR-73': 'FR-73',
+				'FR-74': 'FR-74', 'FR-69M': 'FR-69M', 'FR-BFC': 'FR-BFC', 'FR-21': 'FR-21',
+				'FR-25': 'FR-25', 'FR-39': 'FR-39', 'FR-58': 'FR-58', 'FR-70': 'FR-70',
+				'FR-71': 'FR-71', 'FR-89': 'FR-89', 'FR-90': 'FR-90', 'FR-BRE': 'FR-BRE',
+				'FR-22': 'FR-22', 'FR-29': 'FR-29', 'FR-35': 'FR-35', 'FR-56': 'FR-56',
+				'FR-CVL': 'FR-CVL', 'FR-18': 'FR-18', 'FR-28': 'FR-28', 'FR-36': 'FR-36',
+				'FR-37': 'FR-37', 'FR-41': 'FR-41', 'FR-45': 'FR-45', 'FR-GES': 'FR-GES',
+				'FR-08': 'FR-08', 'FR-10': 'FR-10', 'FR-51': 'FR-51', 'FR-52': 'FR-52',
+				'FR-54': 'FR-54', 'FR-55': 'FR-55', 'FR-57': 'FR-57', 'FR-88': 'FR-88',
+				'FR-6AE': 'FR-6AE', 'FR-67': 'FR-67', 'FR-68': 'FR-68', 'FR-HDF': 'FR-HDF',
+				'FR-02': 'FR-02', 'FR-59': 'FR-59', 'FR-60': 'FR-60', 'FR-62': 'FR-62',
+				'FR-80': 'FR-80', 'FR-IDF': 'FR-IDF', 'FR-77': 'FR-77', 'FR-78': 'FR-78',
+				'FR-91': 'FR-91', 'FR-92': 'FR-92', 'FR-93': 'FR-93', 'FR-94': 'FR-94',
+				'FR-95': 'FR-95', 'FR-75C': 'FR-75C', 'FR-NAQ': 'FR-NAQ', 'FR-16': 'FR-16',
+				'FR-17': 'FR-17', 'FR-19': 'FR-19', 'FR-23': 'FR-23', 'FR-24': 'FR-24',
+				'FR-33': 'FR-33', 'FR-40': 'FR-40', 'FR-47': 'FR-47', 'FR-64': 'FR-64',
+				'FR-79': 'FR-79', 'FR-86': 'FR-86', 'FR-87': 'FR-87', 'FR-NOR': 'FR-NOR',
+				'FR-14': 'FR-14', 'FR-27': 'FR-27', 'FR-50': 'FR-50', 'FR-61': 'FR-61',
+				'FR-76': 'FR-76', 'FR-OCC': 'FR-OCC', 'FR-09': 'FR-09', 'FR-11': 'FR-11',
+				'FR-12': 'FR-12', 'FR-30': 'FR-30', 'FR-31': 'FR-31', 'FR-32': 'FR-32',
+				'FR-34': 'FR-34', 'FR-46': 'FR-46', 'FR-48': 'FR-48', 'FR-65': 'FR-65',
+				'FR-66': 'FR-66', 'FR-81': 'FR-81', 'FR-82': 'FR-82', 'FR-PAC': 'FR-PAC',
+				'FR-04': 'FR-04', 'FR-05': 'FR-05', 'FR-06': 'FR-06', 'FR-13': 'FR-13',
+				'FR-83': 'FR-83', 'FR-84': 'FR-84', 'FR-PDL': 'FR-PDL', 'FR-44': 'FR-44',
+				'FR-49': 'FR-49', 'FR-53': 'FR-53', 'FR-72': 'FR-72', 'FR-85': 'FR-85',
+				'FR-CP': 'FR-CP', 'FR-BL': 'FR-BL', 'FR-MF': 'FR-MF', 'FR-PF': 'FR-PF',
+				'FR-PM': 'FR-PM', 'FR-WF': 'FR-WF', 'FR-20R': 'FR-20R', 'FR-2A': 'FR-2A',
+				'FR-2B': 'FR-2B', 'FR-NC': 'FR-NC', 'FR-TF': 'FR-TF', 'FR-972': 'FR-972',
+				'FR-973': 'FR-973', 'FR-971': 'FR-971', 'FR-974': 'FR-974', 'FR-976': 'FR-976',
+
+				// USA (US)
+				'US-DC': 'US-DC', 'US-AS': 'US-AS', 'US-GU': 'US-GU', 'US-MP': 'US-MP',
+				'US-PR': 'US-PR', 'US-UM': 'US-UM', 'US-VI': 'US-VI', 'US-AK': 'US-AK',
+				'US-AL': 'US-AL', 'US-AR': 'US-AR', 'US-AZ': 'US-AZ', 'US-CA': 'US-CA',
+				'US-CO': 'US-CO', 'US-CT': 'US-CT', 'US-DE': 'US-DE', 'US-FL': 'US-FL',
+				'US-GA': 'US-GA', 'US-HI': 'US-HI', 'US-IA': 'US-IA', 'US-ID': 'US-ID',
+				'US-IL': 'US-IL', 'US-IN': 'US-IN', 'US-KS': 'US-KS', 'US-KY': 'US-KY',
+				'US-LA': 'US-LA', 'US-MA': 'US-MA', 'US-MD': 'US-MD', 'US-ME': 'US-ME',
+				'US-MI': 'US-MI', 'US-MN': 'US-MN', 'US-MO': 'US-MO', 'US-MS': 'US-MS',
+				'US-MT': 'US-MT', 'US-NC': 'US-NC', 'US-ND': 'US-ND', 'US-NE': 'US-NE',
+				'US-NH': 'US-NH', 'US-NJ': 'US-NJ', 'US-NM': 'US-NM', 'US-NV': 'US-NV',
+				'US-NY': 'US-NY', 'US-OH': 'US-OH', 'US-OK': 'US-OK', 'US-OR': 'US-OR',
+				'US-PA': 'US-PA', 'US-RI': 'US-RI', 'US-SC': 'US-SC', 'US-SD': 'US-SD',
+				'US-TN': 'US-TN', 'US-TX': 'US-TX', 'US-UT': 'US-UT', 'US-VA': 'US-VA',
+				'US-VT': 'US-VT', 'US-WA': 'US-WA', 'US-WI': 'US-WI', 'US-WV': 'US-WV',
+				'US-WY': 'US-WY'
+			};
+
+			window.EnderecoIntegrator.subdivisionMappingReverse = JSON.parse(JSON.stringify(window.EnderecoIntegrator.subdivisionMapping));
+
+			const originalMapping = window.EnderecoIntegrator.subdivisionMapping;
+			window.EnderecoIntegrator.subdivisionMappingReverse = Object.entries(originalMapping).reduce((reversedObj, [key, value]) => {
+				reversedObj[value] = key;
+				return reversedObj;
+			}, {});
+
+			window.EnderecoIntegrator.subdivisionCodeToNameMapping = {
+				"DE-BW": "Baden-Württemberg",
+				"DE-BY": "Bayern",
+				"DE-BE": "Berlin",
+				"DE-BB": "Brandenburg",
+				"DE-HB": "Bremen",
+				"DE-HH": "Hamburg",
+				"DE-HE": "Hessen",
+				"DE-MV": "Mecklenburg-Vorpommern",
+				"DE-NI": "Niedersachsen",
+				"DE-NW": "Nordrhein-Westfalen",
+				"DE-RP": "Rheinland-Pfalz",
+				"DE-SL": "Saarland",
+				"DE-SN": "Sachsen",
+				"DE-ST": "Sachsen-Anhalt",
+				"DE-SH": "Schleswig-Holstein",
+				"DE-TH": "Thüringen"
+			};
+
+			// Country matching functions.
+			EnderecoIntegrator.resolvers.countryCodeWrite = function(value) {
+				return new Promise(function(resolve, reject) {
+					resolve(value.toUpperCase());
+				});
+			}
+			EnderecoIntegrator.resolvers.countryCodeRead = function(value) {
+				return new Promise(function(resolve, reject) {
+					resolve(value.toUpperCase());
+				});
+			}
+
+			EnderecoIntegrator.resolvers.subdivisionCodeWrite = function(value) {
+				return new Promise(function(resolve, reject) {
+					const processedValue = value ? String(value) : value;
+					resolve(processedValue);
+				});
+			}
+
+			EnderecoIntegrator.resolvers.subdivisionCodeRead = function(value) {
+				return new Promise(function(resolve, reject) {
+					const processedValue = value ? String(value) : value;
+					resolve(processedValue);
+				});
+			}
+
+			// Execute all function that have been called throughout the page.
+			if (window.EnderecoIntegrator.onLoad && Array.isArray(window.EnderecoIntegrator.onLoad)) {
+				executeCallbacks(window.EnderecoIntegrator.onLoad).then(() => {
+					console.log('All EnderecoIntegrator callbacks executed successfully');
+					window.EnderecoIntegrator.ready = true;
+				}).catch(error => {
+					console.error('Error executing EnderecoIntegrator callbacks:', error);
+					window.EnderecoIntegrator.ready = true; // Set ready even if there were errors
+				});
+			}
+		}
+
+		async function executeCallbacks(callbacks) {
+			for (let i = 0; i < callbacks.length; i++) {
+				const callback = callbacks[i];
+				try {
+					const result = callback();
+					if (result instanceof Promise) {
+						await result;
+					}
+				} catch (error) {
+					console.error('Error executing callback:', error);
+				}
+			}
+		}
+	</script>
+</head>
+<body>
+
+<div class="form-container">
+	<h1>
+		Verify Submit-Blocking Functionality
+	</h1>
+	<p>
+		This demo shows various use cases related to the submit blocking function.
+	</p>
+</div>
+
+<div class="form-container">
+	<div>
+		<label class="label">
+			Server Url
+			<select class="remoteApiUrl" id="remoteApiUrl">
+				<option value="">-- Bitte einen Server auswählen --</option>
+				<option value="endereco-service.de" selected>
+					https://endereco-service.de
+				</option>
+				<option value="s2.endereco-service.de">
+					https://s2.endereco-service.de
+				</option>
+				<option value="staging.endereco-service.de">
+					https://staging.endereco-service.de
+				</option>
+				<option value="localhost">http://localhost</option>
+			</select>
+		</label>
+	</div>
+	<form>
+		<div class="row">
+			<div style="width: 100%">
+				<label class="label">
+					API-Key
+					<input type="text" style="width: 100%" name="apiKey" id="apiKey">
+				</label>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function () {
+		var remoteApiUrlInput = document.querySelector('#remoteApiUrl');
+
+		if (remoteApiUrlInput) {
+			remoteApiUrlInput.value =
+				localStorage.getItem('remoteApiUrl') || 'https://endereco-service.de';
+			remoteApiUrlInput.addEventListener('change', updateRemoteApiUrl);
+
+			function updateRemoteApiUrl() {
+				const remoteApiUrl = remoteApiUrlInput.value.trim();
+				if (remoteApiUrl) {
+					localStorage.setItem('remoteApiUrl', remoteApiUrl);
+					if (window.EnderecoIntegrator) {
+						window.EnderecoIntegrator.config.remoteApiUrl = remoteApiUrl;
+						Object.values(
+							window.EnderecoIntegrator.integratedObjects
+						).forEach((obj) => {
+							obj.config.remoteApiUrl = remoteApiUrl;
+						});
+					}
+				}
+			}
+
+			function setRemoteApiUrl() {
+				if (
+					window.EnderecoIntegrator &&
+					window.EnderecoIntegrator.onLoad &&
+					!window.EnderecoIntegrator.ready
+				) {
+					window.EnderecoIntegrator.onLoad.push(updateRemoteApiUrl);
+				} else {
+					updateRemoteApiUrl();
+				}
+			}
+
+			// Ensure remoteApiUrl is set if already present when page loads
+			if (remoteApiUrlInput.value.trim()) {
+				setRemoteApiUrl();
+			}
+		}
+	});
+</script>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const lastApiKey = sessionStorage.getItem('apiKey') ?? '';
+		const apiKeyInput = document.querySelector('#apiKey');
+		apiKeyInput.value = lastApiKey;
+		if (apiKeyInput) {
+			apiKeyInput.addEventListener('change', updateApiKey);
+
+			function updateApiKey() {
+				const apiKey = apiKeyInput.value.trim();
+				if (apiKey) {
+					sessionStorage.setItem('apiKey', apiKey);
+					 if (window.EnderecoIntegrator) {
+						 window.EnderecoIntegrator.config.apiKey = apiKey;
+						 Object.values(window.EnderecoIntegrator.integratedObjects).forEach(obj => {
+							 obj.config.apiKey = apiKey;
+						 });
+					}
+				}
+			}
+
+			function setApiKey() {
+				if (window.EnderecoIntegrator && window.EnderecoIntegrator.onLoad && !window.EnderecoIntegrator.ready) {
+					window.EnderecoIntegrator.onLoad.push(updateApiKey);
+				} else {
+					updateApiKey();
+				}
+			}
+
+			// Ensure apiKey is set if already present when page loads
+			if (apiKeyInput.value.trim()) {
+				setApiKey();
+			}
+		}
+	});
+</script>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 1: Standard Form Submit via Button Click</h2>
+
+	<p>Description: A simple form with a submit button and no additional listeners.</p>
+	<p>Expected Behavior: Endereco intercepts the event, validates the data, and restores the event. The normal browser submit flow continues.</p>
+	<p>Potential Issues: None expected (baseline test).</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit">Weiter</button>
+			</div>
+		</div>
+
+		<script>
+			enderecoInitAMS({
+				countryCode: '#country',
+				postalCode: '#zip',
+				locality: '#loc',
+				streetFull: '#streetFull',
+				streetName: '#street',
+				buildingNumber: '#street_n',
+				additionalInfo: '#address_1'
+			}, {
+				name: 'case_1',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 2: Form Submit via Enter Key</h2>
+
+	<p>Description: Submit is triggered by pressing the Enter key in an input field.</p>
+	<p>Expected Behavior: Endereco intercepts the keydown event, validates it, and continues.</p>
+	<p>Potential Issues: KeyboardEvent handling differs from MouseEvent handling.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_2">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_2">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_2" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_2">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_2" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_2">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_2">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+
+		<p>Note: Please press Enter to submit this form.</p>
+
+		<script>
+			enderecoInitAMS({
+				countryCode: '#country_2',
+				postalCode: '#zip_2',
+				locality: '#loc_2',
+				streetFull: '#streetFull_2',
+				streetName: '#street_2',
+				buildingNumber: '#street_n_2',
+				additionalInfo: '#address_1_2',
+			}, {
+				name: 'case_2',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 3: Submit Button with Additional Click Listener (OnePageCheckout Scenario)</h2>
+
+	<p>Description: An additional click listener on the submit button adds a loading class and blocks further clicks for 3 seconds.</p>
+	<p>Expected Behavior: When Endereco intercepts the click, the other listener should NOT execute – no loading class should be set. After validation, Endereco restores the event so that other handlers (including the loading logic) can continue working with the corrected data.</p>
+	<p>Potential Issues: Currently, Endereco uses stopPropagation() instead of stopImmediatePropagation(), which means other listeners on the same element are still executed.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_3">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_3">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_3" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_3">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_3" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_3">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_3">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_3_submit">Weiter</button>
+			</div>
+		</div>
+
+		<script>
+
+			function customSubmitCase3(e) {
+				const submitButtonElement = e.target;
+				if(!submitButtonElement.classList.contains('loading')) {
+
+					// Set loading
+					submitButtonElement.classList.add('loading');
+					submitButtonElement.innerHTML = 'Loading...';
+
+					// Remove loading class after 3 seconds
+					setTimeout( () => {
+						submitButtonElement.classList.remove('loading');
+						submitButtonElement.innerHTML = 'Weiter';
+					}, 3000);
+
+				} else {
+					// Block default events while loading
+					e.preventDefault();
+				}
+			}
+
+			document.addEventListener('DOMContentLoaded', function () {
+
+				// Init custom click event on submit button
+				const submitButtonElement = document.querySelector('#case_3_submit');
+				if(submitButtonElement) {
+					submitButtonElement.addEventListener('click', customSubmitCase3 );
+				}
+
+			});
+
+			enderecoInitAMS({
+				countryCode: '#country_3',
+				postalCode: '#zip_3',
+				locality: '#loc_3',
+				streetFull: '#streetFull_3',
+				streetName: '#street_3',
+				buildingNumber: '#street_n_3',
+				additionalInfo: '#address_1_3',
+			}, {
+				name: 'case_3',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 4: Submit via Custom AJAX Handler</h2>
+
+	<p>Description: The submit button does not trigger a native form submission, but rather an AJAX request (simulated by the alert "Form submitted via Custom AJAX").</p>
+	<p>Expected behavior: Endereco intercepts the event, validates the data, and restores the event. The AJAX handler can then execute its work with the corrected data.</p>
+	<p>Potential issues: The AJAX handler may not execute correctly after resuming the form.</p>
+
+	<form method="POST" action="" id="formCase4">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_4">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_4">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_4" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_4">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_4" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_4">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_4">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit">Simulate Ajax Submission</button>
+			</div>
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				const form = document.getElementById('formCase4');
+				form.addEventListener('submit', function (e) {
+
+					// Block the submit of the form
+					e.preventDefault();
+
+					// Instead run a custom AJAX fetch (simulated by alert)
+					const formData = new FormData(form);
+					console.log(formData);
+					alert('Form submitted via Custom AJAX');
+				});
+			});
+
+			enderecoInitAMS({
+				countryCode: '#country_4',
+				postalCode: '#zip_4',
+				locality: '#loc_4',
+				streetFull: '#streetFull_4',
+				streetName: '#street_4',
+				buildingNumber: '#street_n_4',
+				additionalInfo: '#address_1_4',
+			}, {
+				name: 'case_4',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 5: Submit Button Outside the Form (form Attribute)</h2>
+
+	<p>Description: The submit button is located outside the `form` tag and references the form via the `form` attribute.</p>
+	<p>Expected Behavior: Endereco detects the association via the `form` attribute, intercepts the event, validates it, and restores the event.</p>
+	<p>Potential Issues: `closest('form')` does not find the form; the button is not recognized as a submit button.</p>
+
+	<form method="POST" action="" id="formCase5">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_5">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_5">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_5" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_5">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_5" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_5">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_5">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+
+		<script>
+			enderecoInitAMS({
+				countryCode: '#country_5',
+				postalCode: '#zip_5',
+				locality: '#loc_5',
+				streetFull: '#streetFull_5',
+				streetName: '#street_5',
+				buildingNumber: '#street_n_5',
+				additionalInfo: '#address_1_5'
+			}, {
+				name: 'case_5',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+	<div class="row">
+		<div style="margin-left: auto;">
+			<button class="btn btn-secondary" type="reset" form="formCase5">Reset</button>
+			<button class="btn btn-primary" type="submit" form="formCase5">Weiter</button>
+		</div>
+	</div>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 6: Multiple Submit Buttons in the Same Form</h2>
+
+	<p>Description: A form with multiple submit buttons (e.g., "Save" and "Save & Continue").</p>
+	<p>Expected Behavior: The clicked button is correctly identified, and the resume function is triggered by the same button.</p>
+	<p>Potential Issues: The resume function might dispatch to the wrong button or be triggered multiple times.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_6">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_6">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_6" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_6">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_6" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_6">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_6">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_6_save">Speichern</button>
+				<button class="btn btn-primary" type="submit" id="case_6_save_next">Speichern und Weiter</button>
+			</div>
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				function saveCase6(e) {
+					e.preventDefault();
+					alert('Speichern');
+				}
+
+				function saveNextCase6(e) {
+					e.preventDefault();
+					alert('Speichern und Weiter');
+				}
+
+				// Init custom click event on submit button
+				const submitButtonElement1 = document.querySelector('#case_6_save');
+				if(submitButtonElement1) {
+					submitButtonElement1.addEventListener('click', saveCase6 );
+				}
+
+				const submitButtonElement2 = document.querySelector('#case_6_save_next');
+				if(submitButtonElement2) {
+					submitButtonElement2.addEventListener('click', saveNextCase6 );
+				}
+
+			});
+
+			enderecoInitAMS({
+				countryCode: '#country_6',
+				postalCode: '#zip_6',
+				locality: '#loc_6',
+				streetFull: '#streetFull_6',
+				streetName: '#street_6',
+				buildingNumber: '#street_n_6',
+				additionalInfo: '#address_1_6',
+			}, {
+				name: 'case_6',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 7: Submit Button Disabled During Validation</h2>
+
+	<p>Description: Other code disables the submit button during Endereco validation.</p>
+	<p>Expected Behavior: Endereco restores the event to the original button. The button should be enabled again at this point so that the event can be processed.</p>
+	<p>Potential Issues: The disabled button cannot receive events; Resume fails. Endereco has no control over when external code re-enables the button.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_7">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_7">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_7" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_7">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_7" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_7">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_7">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_7_submit">Weiter</button>
+			</div>
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				function customSubmitCase7(e) {
+					const submitButtonElement = e.target;
+					// Disable the button after 1 second
+					setTimeout( () => {
+						submitButtonElement.disabled = true;
+					}, 1000 );
+				}
+
+				// Init custom click event on submit button
+				const submitButtonElement = document.querySelector('#case_7_submit');
+				if(submitButtonElement) {
+					submitButtonElement.addEventListener('click', customSubmitCase7 );
+				}
+
+			});
+
+			enderecoInitAMS({
+				countryCode: '#country_7',
+				postalCode: '#zip_7',
+				locality: '#loc_7',
+				streetFull: '#streetFull_7',
+				streetName: '#street_7',
+				buildingNumber: '#street_n_7',
+				additionalInfo: '#address_1_7',
+			}, {
+				name: 'case_7',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 8: Listener with `stopImmediatePropagation`</h2>
+
+	<p>Description: Another listener on the submit button calls `stopImmediatePropagation()` before Endereco.</p>
+	<p>Expected behavior: Endereco still intercepts the event, validates it, and restores it. Other listeners cannot bypass Endereco.</p>
+	<p>Potential issues: Currently, Endereco is blocked if another listener calls `stopImmediatePropagation()`.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_8">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_8">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_8" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_8">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_8" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_8">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_8">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_8_submit">Weiter</button>
+			</div>
+		</div>
+
+		<script>
+
+			// Init custom click event on submit button without DOMContentLoaded and before enderecoInitAMS()
+			const submitButtonElement = document.querySelector('#case_8_submit');
+			if(submitButtonElement) {
+
+				submitButtonElement.addEventListener('click', (e) => {
+					e.stopImmediatePropagation();
+					e.preventDefault();
+				} );
+			}
+
+			enderecoInitAMS({
+				countryCode: '#country_8',
+				postalCode: '#zip_8',
+				locality: '#loc_8',
+				streetFull: '#streetFull_8',
+				streetName: '#street_8',
+				buildingNumber: '#street_n_8',
+				additionalInfo: '#address_1_8',
+			}, {
+				name: 'case_8',
+				addressType: 'general_address'
+			});
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 9: Form with Capture-Phase Listener</h2>
+
+	<p>Description: A listener is registered in the capture phase (addEventListener('click', handler, true)).</p>
+	<p>Expected Behavior: The capture listener runs before bubble listeners. Endereco should still be able to intercept, validate, and recover the event.</p>
+	<p>Potential Issues: If the capture listener calls stopPropagation(), the event never reaches the bubble phase, and Endereco cannot intervene.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_9">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_9">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_9" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_9">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_9" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_9">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_9">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_9_submit">Weiter</button>
+			</div>
+		</div>
+
+		<script>
+
+			function registerCustomEventCase9() {
+				const submitButtonElement = document.querySelector('#case_9_submit');
+				if(submitButtonElement) {
+					console.log('register custom');
+					submitButtonElement.addEventListener(
+						'click', (e) => {
+							e.stopPropagation();
+							e.preventDefault();
+						}, 
+						true // This event is a capture phase event 
+					);
+				}
+			}
+
+			enderecoInitAMS({
+				countryCode: '#country_9',
+				postalCode: '#zip_9',
+				locality: '#loc_9',
+				streetFull: '#streetFull_9',
+				streetName: '#street_9',
+				buildingNumber: '#street_n_9',
+				additionalInfo: '#address_1_9',
+			}, {
+				name: 'case_9',
+				addressType: 'general_address'
+			});
+
+			// This ensures custom event registration after enderecoInitAMS was called
+			if (window.EnderecoIntegrator.ready) {
+				registerCustomEventCase9();
+			} else {
+				window.EnderecoIntegrator.onLoad.push(() => {
+					registerCustomEventCase9();
+				});
+			}
+
+		</script>
+	</form>
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 10: Submit after page change in SPA style</h2>
+
+	<p>Description: The form is dynamically inserted into the DOM via JavaScript (simulating SPA navigation).</p>
+	<p>Expected behavior: Endereco recognizes the new form, registers listeners, and can intercept, validate, and recover events as usual.</p>
+	<p>Potential issues: Listeners are not registered for dynamically added elements.</p>
+
+	<template id="form-template-case-10">
+
+		<form method="POST" action="">
+			<div class="row">
+				<div>
+					<label class="label">
+						Straße
+						<input type="text" id="street_10">
+					</label>
+				</div>
+				<div>
+					<label class="label">
+						Hausnummer
+						<input type="text" id="street_n_10">
+					</label>
+				</div>
+			</div>
+			<div class="row">
+				<div>
+					<label class="label">
+						Straße (voll)
+						<input type="text" id="streetFull_10" value="">
+					</label>
+				</div>
+			</div>
+			<div class="row">
+				<div>
+					<label class="label">
+						Postleitzahl
+						<input type="text" id="zip_10">
+					</label>
+				</div>
+				<div>
+					<label class="label">
+						Ort
+						<input type="text" id="loc_10" value="">
+					</label>
+				</div>
+			</div>
+			<div class="row">
+				<div>
+					<label class="label">
+						Zusatzinformationen (Appartment, Tür)
+						<input type="text" id="address_1_10">
+					</label>
+				</div>
+			</div>
+			<div class="row">
+				<div>
+					<label class="label">
+						Land
+						<select class="country" id="country_10">
+							<option value="" selected>-- Bitte Land auswählen --</option>
+							<option value="DE">Deutschland</option>
+							<option value="FR">Frankreich</option>
+							<option value="US">USA</option>
+						</select>
+					</label>
+				</div>
+			</div>
+			<div class="row">
+				<div style="margin-left: auto;">
+					<button class="btn btn-secondary" type="reset">Reset</button>
+					<button class="btn btn-primary" type="submit" id="case_10_submit">Weiter</button>
+				</div>
+			</div>
+
+		</form>
+
+	</template>
+
+	<div id="inject-form-case-10-target-area"></div>
+
+	<div class="row" style="gap:16px;">
+		<button class="btn btn-primary" id="inject-form-case-10-after-btn">Inject form after AMS was initiated</button>
+		<button class="btn btn-primary" id="inject-form-case-10-before-btn">Inject form and initiated AMS again</button>
+	</div>
+
+	<script>
+
+		function createFormCase10() {
+			const target = document.getElementById('inject-form-case-10-target-area');
+			const template = document.getElementById('form-template-case-10');
+			const clone = template.content.cloneNode(true);
+			target.innerHTML = '';
+			target.append(clone);
+		}
+
+		function initAmsCase10() {
+			enderecoInitAMS({
+				countryCode: '#country_10',
+				postalCode: '#zip_10',
+				locality: '#loc_10',
+				streetFull: '#streetFull_10',
+				streetName: '#street_10',
+				buildingNumber: '#street_n_10',
+				additionalInfo: '#address_1_10',
+			}, {
+				name: 'case_10',
+				addressType: 'general_address'
+			});
+		}
+
+		// Listen for inject button clicks
+		document.addEventListener('DOMContentLoaded', function () {
+
+			// Inject form after AMS was initiated
+			const injectButtonAfter = document.querySelector('#inject-form-case-10-after-btn');
+			injectButtonAfter.addEventListener('click', () => {
+				createFormCase10();
+			});
+
+			// Inject form and initiated AMS again
+			const injectButtonBefore = document.querySelector('#inject-form-case-10-before-btn');
+			injectButtonBefore.addEventListener('click', () => {
+				createFormCase10();
+				initAmsCase10();
+			});
+
+		});
+
+		// Init Endereco Ams before the form is present
+		initAmsCase10();
+
+	</script>
+
+	
+
+</div>
+
+
+
+<div class="form-container">
+
+	<h2>Use case 11: Double-click on the submit button</h2>
+
+	<p>Description: User quickly clicks the submit button twice.</p>
+	<p>Expected behavior: Endereco intercepts the first click and blocks further events until validation is complete. Only one event cycle (intercept → validate → restore) is executed.</p>
+	<p>Potential issues: Double validation, double resume, or a race condition if the second click occurs during validation.</p>
+
+	<form method="POST" action="">
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße
+					<input type="text" id="street_11">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Hausnummer
+					<input type="text" id="street_n_11">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Straße (voll)
+					<input type="text" id="streetFull_11" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Postleitzahl
+					<input type="text" id="zip_11">
+				</label>
+			</div>
+			<div>
+				<label class="label">
+					Ort
+					<input type="text" id="loc_11" value="">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Zusatzinformationen (Appartment, Tür)
+					<input type="text" id="address_1_11">
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label class="label">
+					Land
+					<select class="country" id="country_11">
+						<option value="" selected>-- Bitte Land auswählen --</option>
+						<option value="DE">Deutschland</option>
+						<option value="FR">Frankreich</option>
+						<option value="US">USA</option>
+					</select>
+				</label>
+			</div>
+		</div>
+		<div class="row">
+			<div style="margin-left: auto;">
+				<button class="btn btn-secondary" type="reset">Reset</button>
+				<button class="btn btn-primary" type="submit" id="case_11_submit">Weiter</button>
+				<button class="btn btn-primary" type="button" id="case_11_simulate_dbl_click">Simulate Double Click</button>
+			</div>
+		</div>
+
+		<script>
+
+			document.addEventListener('DOMContentLoaded', function () {
+				const submitButton = document.querySelector('#case_11_submit');
+				const dblClickButton = document.querySelector('#case_11_simulate_dbl_click');
+				dblClickButton.addEventListener('click', (e) => {
+
+					e.preventDefault();
+
+					// First click
+					setTimeout(() => {
+						console.log('Click 1');
+						submitButton.click();
+					},1000);
+
+					// Second click
+					setTimeout(() => {
+						console.log('Click 2');
+						submitButton.click();
+					},1250);
+
+				}, true);
+			});
+
+			enderecoInitAMS({
+				countryCode: '#country_11',
+				postalCode: '#zip_11',
+				locality: '#loc_11',
+				streetFull: '#streetFull_11',
+				streetName: '#street_11',
+				buildingNumber: '#street_n_11',
+				additionalInfo: '#address_1_11',
+			}, {
+				name: 'case_11',
+				addressType: 'general_address'
+			});
+
+		</script>
+	</form>
+
+</div>
+
+
+
+<script
+		defer
+		async
+		src="/assets/endereco.min.js"
+></script>
+
+
+
+</body>
+</html>
