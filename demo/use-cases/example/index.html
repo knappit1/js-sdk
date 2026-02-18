@@ -406,6 +406,53 @@
 
 
 <div class="form-container">
+        <form>
+            <div class="row">
+                    <div>
+                            <label class="label">
+                                    Anrede (Loop Testinf)
+                                    <select name="salutation0">
+                                            <option value="x">X (x)</option>
+                                            <option value="mrr">Herr (mrr)</option>
+                                            <option value="mrss">Frau (mrss)</option>
+                                            <option value="xxx">Herr (xxx)</option>
+                                            <option value="yyy">Frau (yyy)</option>
+                                    </select>
+                            </label>
+                    </div>
+                    <div>
+                            <label class="label">
+                                    Titel
+                                    <input type="text" name="academicTitle0">
+                            </label>
+                    </div>
+            </div>
+            <div class="row">
+                    <div>
+                            <label class="label">
+                                    Vorname
+                                    <input type="text" name="firstName0">
+                            </label>
+                    </div>
+                    <div>
+                            <label class="label">
+                                    Nachname
+                                    <input type="text" name="lastName0">
+                            </label>
+                    </div>
+            </div>
+	</form>
+	<script>
+		enderecoInitPersonServices({
+			salutation: '[name="salutation0"]',
+			title: '[name="academicTitle0"]',
+			firstName: '[name="firstName0"]',
+			lastName: '[name="lastName0"]',
+		}, {
+			name: 'zaro_person'
+		});
+	</script>
+	<hr>
 	<form>
 		<div class="row">
 			<div>
