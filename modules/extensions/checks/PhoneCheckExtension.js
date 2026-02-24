@@ -35,7 +35,62 @@ var PhoneCheckExtension = {
                     }
 
                     return true;
-                }
+                };
+
+                ExtendableObject.util.isEqual = function(a, b) {
+                    if (a === b) {
+                        return true;
+                    }
+
+                    if (typeof a !== typeof b) {
+                        return false;
+                    }
+
+                    if (a === null || b === null) {
+                        return false;
+                    }
+
+                    // Arrays
+                    if (Array.isArray(a) && Array.isArray(b)) {
+                        if (a.length !== b.length) {
+                            return false;
+                        }
+
+                        for (var i = 0; i < a.length; i++) {
+                            if (!ExtendableObject.util.isEqual(a[i], b[i])) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    // Objects
+                    if (typeof a === 'object') {
+                        var keysA = Object.keys(a);
+                        var keysB = Object.keys(b);
+
+                        if (keysA.length !== keysB.length) {
+                            return false;
+                        }
+
+                        for (var j = 0; j < keysA.length; j++) {
+                            var key = keysA[j];
+
+                            if (!keysB.includes(key)) {
+                                return false;
+                            }
+
+                            if (!ExtendableObject.util.isEqual(a[key], b[key])) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    return false;
+                };
 
                 // Add the "emaiL" property
                 Object.defineProperty(ExtendableObject, 'phoneStatus', {
@@ -48,7 +103,12 @@ var PhoneCheckExtension = {
                         ExtendableObject.util.Promise.resolve(value).then(function(value) {
                             var index;
                             var newValue = value;
-                            if (oldValue !== newValue) {
+
+                            if ('' === ExtendableObject.phone && Array.isArray(value) ) {
+                                newValue.splice(0, newValue.length);
+                            }
+
+                            if (!ExtendableObject.util.isEqual(oldValue, newValue)) {
                                 // Check if the type of phone is fitting in.
                                 if ('mobile' === ExtendableObject.numberType
                                     && !newValue.includes('phone_is_mobile')
